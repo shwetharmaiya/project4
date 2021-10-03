@@ -1,0 +1,10 @@
+{% extends './layout.html' %}
+
+{% block content %}
+{% load static %}
+{% if post %}
+    {% include "./display_post.html" %}
+{% else %}
+    <p> 404 Post not found </p>
+{% endif %}
+{% endblock %}

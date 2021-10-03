@@ -1,0 +1,13 @@
+{% load static %}
+
+<div id="post_{{post.pk}}" style="transition:all 1s ease" class="post">
+    <div id="post_title_id_{{post.pk}}" class="post-title">
+        <a href="/post/{{ post.pk }}">{{ post.post_title }}</a>
+    </div>
+    <div id="post_txt_{{post.pk}}" style="max-height:100px;overflow:hidden">
+        <p class="post-format">{{ post.post_text|safe }}</p>
+    </div>
+</div>
+<div class="post-username">
+    published: <a href="/post/{{ post.pk }}">{{ post.post_timestamp | timesince}} </a> ago at {{post.post_timestamp}} by <a href="../u/{{ post.user_id.id }}">{{ post.user_id.username }}</a>
+ </div>

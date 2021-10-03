@@ -2,28 +2,26 @@
 {% block content %}
 <script>
     function submit_post() {
-            alert("HELLO TEST ")
             txtarea = document.getElementById("new_post").value 
-            print(txtarea.length)
-            if len(txtarea) > 0:
+            console.log(txtarea.length)
+            if (txtarea.length > 0)
                 num_chars = txtarea.length
             if ( num_chars > 1000) {
-                alert("You have exceeded the 10,00 character limit with " + num_chars + " characters")
+                alert("You have exceeded the 1,000 character limit with " + num_chars + " characters")
                 return false
             } 
-            if (num_chars < 100) {
-                alert("Only " + num_chars + " characters? Go on, type more. At least a 100.")
+            if (num_chars < 10) {
+                alert("Only " + num_chars + " characters? Go on, type more. At least a 10.")
                 return false
             }
     
             data = {
-                new_ramble_title: new_ramble_title.value,
-                new_ramble_post: tinyMCE.activeEditor.getContent(),
-                new_ramble_tags: new_ramble_tags.value
+                new_post_title: new_title.value,
+                new_post: new_post.value,
             }
     
                 var ajax = new XMLHttpRequest()
-                ajax.open("POST", "ramblepost")
+                ajax.open("POST", "new_post")
                 ajax.setRequestHeader("X-CSRFToken", "{{csrf_token}}");
                 ajax.onreadystatechange = function(response)
                 {
@@ -55,4 +53,10 @@
         <button onclick="submit_post()"> Submit Post </button>
 
     </div>
+    {% for post in posts %}       
+      {% include "./display_post.html" %}
+        <br/>
+    {% endfor %}
+
+
 {% endblock %}
