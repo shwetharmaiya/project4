@@ -1,18 +1,138 @@
-{% load static %}
+{% load static tailwind_tags %}
 
 <!DOCTYPE html>
+
 <html lang="en">
-    <head>
+   
+
+<head>
+    
         <title>{% block title %}Social Network{% endblock %}</title>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
         <link href="{% static 'network/styles.css' %}" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <!-- {% tailwind_css %}-->
+
         {% block content %}
         {% endblock %}
-   
-    </head>
-    <body>
 
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <script> 
+        function ajax_get(url, add_csrf, callback) {
+            var ajax = new XMLHttpRequest()
+            ajax.open("GET", url)
+            if (add_csrf) {
+                ajax.setRequestHeader("X-CSRFToken", "{{csrf_token}}");
+            }
+            ajax.onreadystatechange = function (response) {
+                if (this.readyState == 4) {
+                    callback(this.responseText)
+                }
+            }
+            ajax.send()
+        }
+            function like_post(post_id) {
+                  var like_div = document.getElementById("like_" + post_id);
+                  if (document.getElementById("like_" + post_id).src.endsWith("{% static 'images/liked_button.png' %}")) {
+                      console.log("unliking...");
+                      document.getElementById("like_" + post_id).src = "{% static 'images/like_button.png' %}";
+                  }
+                  else {
+                      document.getElementById("like_" + post_id).src = "{% static 'images/liked_button.png' %}";
+                  }
+      
+                  data = {
+                      post_id: post_id
+                  }
+                  var token = '{{csrf_token}}';
+      
+                  ajaxCall();
+      
+      
+                  function ajaxCall() {
+                      like_count_id = document.getElementById("like_count_" + post_id);
+      
+                      $.ajax({
+                          url: "{% url 'like_a_post' %}",
+                          type: "POST",
+                          data: { 'post_id': post_id },
+                          headers: { "X-CSRFToken": token },
+                          success: function (result) {
+                              if (result.num_likes == 0) {
+                                  $('#' + like_count_id.id).hide();
+                              } else {
+                                  $('#' + like_count_id.id).html(result.num_likes).show();
+                              }
+                          }
+
+                      });
+                  }
+          } 
+          function follow_user(user_id) {
+                var getId = document.getElementById("useradd_" + user_id);
+                //var imagePath = $('.imagePath');
+                var imagePath = $('#'+'useradd_'+user_id);
+                
+                if (document.getElementById("useradd_" + user_id).src.endsWith("k%}")) {
+                    console.log("unfollowing...");
+                    imagePath.attr('src', imagePath.attr('src').replace("{% static 'images/follows.png' %}", "{% static 'images/follow.png' %}"));
+                    //document.getElementById("useradd_" + user_id).src =  "{% static 'images/follow.png' %}";
+                }
+                else {
+                    console.log("following...");
+                    imagePath.attr('src', imagePath.attr('src').replace("{% static 'images/follow.png' %}", "{% static 'images/follows.png' %}"));
+                    //document.getElementById("useradd_" + user_id).src =  "{% static 'images/follows.png' %}";
+                }
+                data = {
+                    user_id: user_id,
+                }
+                
+                var ajax = new XMLHttpRequest()
+                ajax.open("POST", "{% url 'follow_a_user' %}")
+                ajax.setRequestHeader("X-CSRFToken", "{{csrf_token}}");
+                ajax.onreadystatechange = function (response) {
+                    console.log(response, this.status, this.readyState);
+                    if (response.target.response == 400) {
+                        if (document.getElementById("useradd_" + user_id).src.endsWith("{% static 'images/follow.png' %}")) {
+                            console.log("unfollowing...");
+                            imagePath.attr('src', imagePath.attr('src').replace("{% static 'images/follow.png' %}", "{% static 'images/follows.png' %}"));
+                        }
+                        else {
+                            console.log("following...");
+                            imagePath.attr('src', imagePath.attr('src').replace("{% static 'images/follows.png' %}", "{% static 'images/follow.png' %}"));
+                        }
+                    }
+                }
+
+                var formData = new FormData()
+                for (var i in data)
+                    formData.append(i, data[i]);
+
+                ajax.send(formData)
+
+            }
+
+    function edit_post(post_id) {
+        var token = '{{csrf_token}}';
+
+        $.ajax({
+            url: "{% url 'edit_post' %}",
+            type: "POST",
+            headers: { "X-CSRFToken": token },
+            data: { post_id: post_id },
+            success: function (result) {
+                window.location.href = "/edit_post?post_id=" + post_id;
+            }
+        });
+    }
+  
+
+      </script>
+    </head>
+
+   <body class="bg-green-50">
+       <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <a class="navbar-brand" href="#">Network</a>
           
             <div>
@@ -27,7 +147,7 @@
                 </li>
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Following</a>
+                        <a class="nav-link" href="/u/{{ profile_user.id}}/follows_posts">Following</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
@@ -43,10 +163,13 @@
               </ul>
             </div>
           </nav>
-        
         <div class="body">
             {% block body %}
             {% endblock %}
         </div>
+
+{% block javascript %}
+{% endblock %}
+
     </body>
 </html>

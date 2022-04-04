@@ -1,0 +1,10 @@
+{% extends './user_base.html' %}
+{% block subcontent %}
+	{% for post in profile_user_likes %}
+	<div class="container" id="outer" style="float: left; width: 75%;">
+		{% include "./display_post.html" %}
+		
+	</div>
+	
+	{% endfor %}
+{% endblock subcontent %}  

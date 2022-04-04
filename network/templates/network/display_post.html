@@ -1,13 +1,53 @@
 {% load static %}
-
+<script>
+    //function edit_post(post_id) {
+        //var myPost = document.getElementById('post_txt_{{post.pk}}');
+      //  myParent = document.getElementById('post_'+post_id);
+      //  myPost = document.getElementById('post_txt_'+ post_id) ;
+      //  myText = myPost.innerText;
+      //  myParent.removeChild(myPost);
+      //  myPost = document.createElement("textarea");
+      //  myPost.contentEditable = true;
+      //  var t = document.createTextNode(myText);
+      //  myParent.appendChild(t);
+// }
+</script>
 <div id="post_{{post.pk}}" style="transition:all 1s ease" class="post">
     <div id="post_title_id_{{post.pk}}" class="post-title">
         <a href="/post/{{ post.pk }}">{{ post.post_title }}</a>
     </div>
+    <button onclick="like_post({{ post.pk }})" style="margin-left:5px;padding:2px">
+        {% if user_liked_posts and post.pk in user_liked_posts %}
+            <img id="like_{{post.pk}}" src="{% static 'images/liked_button.png' %}" width="12px" height="12px">
+        {% else %}
+            <img id="like_{{post.pk}}" src="{% static 'images/like_button.png' %}" width="12px" height="12px">
+        {% endif %}
+    </button>
+    {% if num_likes > 0 %}
+    <a id="like_count_{{post.pk}}" href='javascript:void(0)'">{{ num_likes }} </a>
+    {% else %}
+    <a id="like_count_{{post.pk}}" href='javascript:void(0)' style="display:none;">{{num_likes}}</a>
+    {% endif %}
+    <button onclick="edit_post({{ post.pk }})" id="editpost" class="iconbutton" style="margin-left:5px;padding:2px; display: inline;">
+        <img src="{% static 'images/edit_post.png' %}" width="12px" height="12px">
+    </button>
     <div id="post_txt_{{post.pk}}" style="max-height:100px;overflow:hidden">
         <p class="post-format">{{ post.post_text|safe }}</p>
     </div>
 </div>
 <div class="post-username">
     published: <a href="/post/{{ post.pk }}">{{ post.post_timestamp | timesince}} </a> ago at {{post.post_timestamp}} by <a href="../u/{{ post.user_id.id }}">{{ post.user_id.username }}</a>
- </div>
+
+ {% if user_profile and post.user_id.id == user_profile.user_id.id %}
+ That's you! 
+{% else %}
+<button class="iconbutton" onclick="follow_user({{ post.user_id.id }})" style="margin-left:5px;padding:2px">
+{% if user_followers and post.user_id.id in user_followers %}
+ <img class="imagePath" id="useradd_{{ post.user_id.id }}" src="{% static 'images/follows.png' %}" width="10px" height="10px">
+{% else %}
+ <img class="imagePath" id="useradd_{{ post.user_id.id }}" src="{% static 'images/follow.png' %}" width="10px" height="10px">
+{% endif %}
+</button>
+{% endif %}
+</div>
+ 

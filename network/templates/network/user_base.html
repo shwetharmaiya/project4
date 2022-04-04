@@ -1,0 +1,71 @@
+{% extends './layout.html' %}
+{% load static %}
+
+{% block body %}
+
+<script>
+    $(".nav li .nav-link").on("click", function(){
+        $("#userDetails").find(".active").removeClass("active");
+        $(this).addClass("active");
+    });
+</script>
+
+{% if profile_user %}
+<div style="float: left; width: 25%; ">
+    <div style="margin-left: 10px;"">
+        <img src=" {{ profile_user_profile.profile_pic.url }}" width="200px" />
+
+
+    <p>{{ profile_user_profile.full_name }} (@{{ profile_user.username}})</p>
+    <p> {{ profile_user_profile.bio }}</p>
+</div>
+
+<div id="userDetails" class="container">
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item">
+            <a class="nav-link" id="id1" onclick="active('id1')" href="/u/{{profile_user.id}}">Posts</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="id2" onclick="active('id2')" aria-current="page"
+                href="/u/{{ profile_user.id}}/likes">Likes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="id3" onclick="active('id3')" href="/u/{{ profile_user.id}}/follows">Follows</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="id4" onclick="active('id4')" href="/u/{{ profile_user.id}}/followers">Followers</a>
+        </li>
+        
+    </ul>
+    
+</div>
+</div>
+<script>
+    function check_storage() {
+    //check if there is any value in localStorage
+if (localStorage.getItem("listId") != null) {
+    //get that value
+    var val= localStorage.getItem("listId");
+    console.log(val);
+    setActive(val); //call function
+     }
+     }
+check_storage();
+ function active(id) {
+localStorage.removeItem('listId');//clear previous data
+localStorage.setItem("listId", id);//add data to storage
+console.log(id);
+      }
+
+ function setActive(value) {
+document.getElementById(value).classList.value = "list-group-item  active";
+    }
+</script>
+    {% else %}
+    <p> 404 User Not Found</p>
+{% endif %}
+
+	{% block subcontent %}
+	{% endblock subcontent %}
+
+{% endblock %}

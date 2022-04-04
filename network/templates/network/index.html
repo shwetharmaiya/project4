@@ -1,4 +1,5 @@
 {% extends "network/layout.html" %}
+
 {% block content %}
 <script>
     function submit_post() {
@@ -52,11 +53,30 @@
         <br/>
         <button onclick="submit_post()"> Submit Post </button>
 
-    </div>
-    {% for post in posts %}       
-      {% include "./display_post.html" %}
-        <br/>
+        
+    
+    {% for post in page_obj %}       
+    {% include "./display_post.html" %}
+    <br/>
     {% endfor %}
-
-
-{% endblock %}
+   
+    <div class="pagination">
+   
+        <span class="step-links">
+            
+<nav aria-label="Page navigation example">
+    <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% endif %}
+    
+            <li class="page-item"><a class="page-link" href="#">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
+    
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a></li>
+            {% endif %}
+     </ul>
+</nav>  
+ {% endblock %}

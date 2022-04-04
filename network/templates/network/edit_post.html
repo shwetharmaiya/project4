@@ -1,0 +1,74 @@
+{% extends './layout.html' %}
+
+{% load static %}
+{% block body %}
+<script>
+    
+    try { 
+        var post_id = (new URL(location.href)).searchParams.get('post_id') 
+    }
+    catch { 
+        console.log("No post")
+    } 
+    if ( post_id ) { 
+        ajax_get("{% url 'get_post' 123456 %}".replace('123456', post_id) , false, function(responseText) { 
+            console.log("In editor post id");
+            console.log(responseText);
+            var { text, title} = JSON.parse(responseText);
+            document.getElementById("editor_content").innerHTML = text
+            document.getElementById("editor_new_title").value = title
+        })
+    } else { 
+        post_id =  false
+    }
+</script>
+    {% csrf_token %}
+<div style="text-align:center;padding:0 10%">   
+    <form id="editorForm" method="post" action="submit_post()">
+        <label for="editor_new_title"  maxlength="100"></label>
+        <input type="text" class="form-control" id="editor_new_title" placeholder="Title">
+        <textarea style="margin:5px" rows="10" cols="100" maxlength="100%" id="editor_content" name="editor_content" placeholder="Write your Story"></textarea>
+    </form>
+    <button id="publishbutton" type="button" class="btn btn-primary" onclick="aftereffects()">Publish/UnPublish</button>
+</div>
+<script>
+    function aftereffects() { 
+    try { 
+        if (post_id != null && post_id != None && (post_id != false && draft_id != false)) { 
+       //document.getElementById("publishbutton").innerHTML = "UnPublish"
+       let pbutton = document.getElementById("publishbutton")
+       
+        pbutton.addEventListener("click", () => {  
+        console.log("In save draft script");
+        if ( tinyMCE.activeEditor !== null ) { 
+          data = {
+              new_ramble_title: editor_new_title.value,
+              new_ramble_post: editor_content.innerText,
+            }
+        }
+       
+        $.ajax({
+            url:'save_draft',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            data: data,
+            type: 'POST',
+            success: function(responseText) {
+                console.log('Saved the draft.')
+                window.location = "/draft/" + responseText 
+            }
+        });
+    });
+    pbutton.click()
+        }
+    }
+    catch  { 
+        let pbutton = document.getElementById("publishbutton")
+        pbutton.addEventListener("click", () => {
+            submit_post()
+        });
+        pbutton.click()
+    }
+    }
+
+</script>
+{% endblock %}
