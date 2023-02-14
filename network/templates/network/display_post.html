@@ -16,13 +16,19 @@
     <div id="post_title_id_{{post.pk}}" class="post-title">
         <a href="/post/{{ post.pk }}">{{ post.post_title }}</a>
     </div>
-    <button onclick="like_post({{ post.pk }})" style="margin-left:5px;padding:2px">
-        {% if user_liked_posts and post.pk in user_liked_posts %}
+    <!-- <button  style="margin-left:5px;padding:2px">
+         {% if num_likes > 0 %}
             <img id="like_{{post.pk}}" src="{% static 'images/liked_button.png' %}" width="12px" height="12px">
         {% else %}
             <img id="like_{{post.pk}}" src="{% static 'images/like_button.png' %}" width="12px" height="12px">
         {% endif %}
-    </button>
+        -->
+        {% if num_likes > 0 %}    
+        <button id ="like"  value ="{{post.pk}}" ><i class="fa fa-heart" style = "color:#f7786b"></i></button>
+        {% else %}
+        <button id ="like" value ="{{post.pk}}" ><i class="fa fa-heart" style = "color:#b0aac0"></i></button>
+        {% endif %}
+    <!-- </button> -->
     {% if num_likes > 0 %}
     <a id="like_count_{{post.pk}}" href='javascript:void(0)'">{{ num_likes }} </a>
     {% else %}

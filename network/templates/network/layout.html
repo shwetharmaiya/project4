@@ -1,4 +1,4 @@
-{% load static tailwind_tags %}
+{% load static %}
 
 <!DOCTYPE html>
 
@@ -13,7 +13,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-        <!-- {% tailwind_css %}-->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
         {% block content %}
         {% endblock %}
@@ -37,13 +37,13 @@
                   if (document.getElementById("like_" + post_id).src.endsWith("{% static 'images/liked_button.png' %}")) {
                       console.log("unliking...");
                       document.getElementById("like_" + post_id).src = "{% static 'images/like_button.png' %}";
+                      var liking_post = 0;
                   }
                   else {
                       document.getElementById("like_" + post_id).src = "{% static 'images/liked_button.png' %}";
-                  }
-      
+                      var liking_post = 1;
                   data = {
-                      post_id: post_id
+                      post_id: post_id,
                   }
                   var token = '{{csrf_token}}';
       
@@ -56,7 +56,7 @@
                       $.ajax({
                           url: "{% url 'like_a_post' %}",
                           type: "POST",
-                          data: { 'post_id': post_id },
+                          data: { 'post_id': post_id , 'liking_post': liking_post },
                           headers: { "X-CSRFToken": token },
                           success: function (result) {
                               if (result.num_likes == 0) {
@@ -112,7 +112,54 @@
                 ajax.send(formData)
 
             }
+function save_post(postId) {
+    // save post with new content
+    
+    textarea = document.getElementById(`textarea_${postId}`)
+    content =textarea.value
+    if (content == ''){
+        return
+    }
+    id = `post_${postId}`
+    
+    textarea.remove()
 
+
+    display = createElement('div',null,null,null);
+
+    
+    fetch(`save_post/${postId}/${content}`)
+    
+        .then(response =>response.text())
+    
+            .then(text =>{
+            
+                result = JSON.parse(text)
+ 
+                const keys = ["result"]
+                keys.forEach(key=>{
+
+                    changed_post = result[key]
+                    
+                    for (i in changed_post){
+
+
+                        
+                        display = setup_post_groups(changed_post[i],result,display,cardCreated =true)
+
+                    }
+                
+            })
+            
+            
+
+           
+            document.getElementById(id).innerHTML  = display.innerHTML
+            //add like feature to new posts
+            likefeature();
+        })
+            
+}
     function edit_post(post_id) {
         var token = '{{csrf_token}}';
 
@@ -121,11 +168,43 @@
             type: "POST",
             headers: { "X-CSRFToken": token },
             data: { post_id: post_id },
-            success: function (result) {
-                window.location.href = "/edit_post?post_id=" + post_id;
+            success: function (result) {                
+                var displayElement = document.createElement('div');
+                //let user_id = document.createElement('h5');
+                let onclickfunc = `save_post(${post_id})`
+                var textArea =  document.createElement("TEXTAREA");
+                textArea.rows = 10;
+
+                textArea.cols = 50; 
+                textArea.id = "textarea_"+post_id;
+                textArea.name = "editpost";
+                
+                textArea.innerHTML = result.post_text; 
+                //let onclickfunc = `save_post(${post_id})`
+                let spanElement = document.createElement("span");
+                //let btn = document.createElement("input") 
+                //btn.innerText = "Submit";
+                //btn.type = "submit";
+                //btn.name = "btn";
+                //btn.style.display = 'block';
+                //btn.className = 'btn btn-primary';
+                
+                //btn.style.width = '30px'; // setting the width to 200px
+                //btn.style.height = '20px'; // setting the height to 200px
+                //btn.style.background = 'teal'; // setting the background color to teal
+                //btn.style.color = 'black'; // setting the color to white
+                //btn.style.fontSize = '20px'; // setting the font size to 20px
+                spanElement.innerHTML = '<input type= "submit" id ="savepost" class ="btn btn-primary" name = "btn" visibility="visible" style="display: block;background-color:#000; width:150px; height:50px; " onclick='+onclickfunc+'>'
+                spanElement.value = "Submit";
+                //displayElement.appendChild(user_id);
+                displayElement.appendChild(textArea); 
+                displayElement.appendChild(spanElement);
+                //document.body.appendChild(displayElement);
+                document.getElementById("post_"+post_id).innerHTML = displayElement.innerHTML  
+        
             }
         });
-    }
+        }
   
 
       </script>
@@ -170,6 +249,8 @@
 
 {% block javascript %}
 {% endblock %}
+<script type ="text/javascript" src="{% static  'js/index.js' %}"></script>
+<script type ="text/javascript" src="{% static  'js/util.js' %}"></script>
 
     </body>
 </html>

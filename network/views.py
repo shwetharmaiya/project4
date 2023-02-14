@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
@@ -34,7 +35,7 @@ def index(request):
     posts_and_likes = [(post, len(Like.objects.filter(post_id=post) )) for post in posts]
     paginator = Paginator(posts_and_likes, 10)
 
-    user_liked_posts = set([like.post_id.id for like in Like.objects.filter(user_id=user)])
+    user_liked_posts = [like.post_id.id for like in Like.objects.filter(user_id=user)]
 
     template = loader.get_template('network/index.html')   
 
@@ -117,7 +118,8 @@ def make_profile(request):
             else: 
                 new_profile.profile_pic = "profilepix/default_dog.jpg"
             new_profile.save()
-            return redirect(index)
+            #return redirect(index)
+            return HttpResponseRedirect(reverse("index"))
         else:
             return redirect(make_profile)            
     else:
@@ -143,19 +145,23 @@ def submit_new_post(request):
     new_post.save()
    
     pk = new_post.pk
+    return HttpResponseRedirect(request.path_info)
 
-    return HttpResponse(pk)
+    #return HttpResponse(pk)
 
 def like_post(request):
     user_id = request.user.id
-    user = None
-    post = None
+    print ("User ID : ", user_id)
+    
     try:
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
         return HttpResponse(status=400)
     post_id = request.POST.get('post_id', False)
-
+    liking_post = request.POST.getlist('liking_post').pop()
+    liking_post = int(liking_post)
+    print("liking_post : ", liking_post)
+   
     try:
         post = Post.objects.get(pk=post_id)
     except Post.DoesNotExist:
@@ -164,20 +170,36 @@ def like_post(request):
     if not user or not post:
         return HttpResponse(status=400)
 
-    # check in like table if post is present
-    try:
-        like = Like.objects.get(user_id=user, post_id=post)
-    except Like.DoesNotExist:
-        # if not present, add new row with user id and post id
-        new_like = Like(user_id=user, post_id=post)
-        new_like.save()
-        context = { 'num_likes' : len(Like.objects.filter(post_id=post_id))} 
-        return HttpResponse(json.dumps(context), content_type="application/json", status=200)
+    if liking_post == 1:  
+        # check in like table if post is present
+        try:
+            like = Like.objects.get(user_id=user, post_id=post)
+        except Like.DoesNotExist:
+            # if not present, add new row with user id and post id
+            new_like = Like(user_id=user, post_id=post)
+            length1 = len(Like.objects.filter(post_id=post_id))
+            print("Length1 : ", length1)
+            print("new_like : ")
+            print(new_like.user_id)
+            print(new_like.post_id)
+            
+            new_like.save()
+            length2 = len(Like.objects.filter(post_id=post_id))
+            print("Length2 : ", length2)
+    else: 
+        try:
+            old_like = Like.objects.get(user_id=user, post_id=post)
+            old_like.delete()
+            print("old_like : ", old_like)
+        except Like.DoesNotExist:
+            pass
+    context = { 'num_likes' : len(Like.objects.filter(post_id=post_id))} 
+    return HttpResponse(json.dumps(context), content_type="application/json", status=200)
 
     # if present, delete row
-    like.delete()
-    context = { 'num_likes' : len(Like.objects.filter(post_id=post_id)) } 
-    return HttpResponse(json.dumps(context), content_type="application/json", status=200)
+    #like.delete()
+    #context = { 'num_likes' : len(Like.objects.filter(post_id=post_id)) } 
+    #return HttpResponse(json.dumps(context), content_type="application/json", status=200)
 
 def user_context(request_obj):
     context = {}
@@ -202,14 +224,18 @@ def user_context(request_obj):
 
 def get_user_profile(request, user_id):
     try:
+        user_id = request.user.id
+        user = User.objects.get(pk=user_id)
         profile_user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
         profile_user = None
     if profile_user:
         user_posts = Post.objects.filter(user_id=profile_user).order_by('-post_timestamp')
         posts_and_likes = [(post, len(Like.objects.filter(post_id=post) )) for post in user_posts]
-    
-        context = {'profile_user': profile_user, 'posts': user_posts,'posts_and_likes': posts_and_likes}
+        profile_user_followers = [follow.follower_id for follow in Follow.objects.filter(followee_id=profile_user)]
+        profile_user_follows = [follow.followee_id for follow in Follow.objects.filter(follower_id=profile_user)]
+
+        context = {'user': user, 'profile_user': profile_user, 'posts': user_posts,'posts_and_likes': posts_and_likes , 'profile_user_followers_names': profile_user_followers, 'profile_user_followers': len(profile_user_followers) , 'profile_user_follows' : len(profile_user_follows) }
     else:
         context = {}
 
@@ -225,12 +251,16 @@ def get_user_profile_likes(request, user_id):
         profile_user_profile = Profile.objects.get(user_id=profile_user)
         profile_user_likes = [like.post_id for like in Like.objects.filter(user_id=profile_user)]
         profile_user_posts_and_likes = [(post, len(Like.objects.filter(post_id=post))) for post in profile_user_likes]
+        profile_user_followers = [follow.follower_id for follow in Follow.objects.filter(followee_id=profile_user)]
+        profile_user_follows = [follow.followee_id for follow in Follow.objects.filter(follower_id=profile_user)]
 
 
         profile_context = {'profile_user': profile_user, 
                    'profile_user_profile': profile_user_profile,
                    'profile_user_likes': profile_user_likes,
                    'profile_user_posts_and_likes': profile_user_posts_and_likes,
+                   'profile_user_followers': len(profile_user_followers) , 
+                   'profile_user_follows' : len(profile_user_follows)
                     }
     else:
         profile_context = {}
@@ -254,10 +284,13 @@ def get_user_profile_follows(request, user_id):
         profile_user_follows = [follow.followee_id for follow in Follow.objects.filter(follower_id=profile_user)]
         follows_profiles = Profile.objects.all().filter(user_id__in=profile_user_follows)
         profile_user_profile = Profile.objects.get(user_id=profile_user)
-        
+        profile_user_followers = [follow.follower_id for follow in Follow.objects.filter(followee_id=profile_user)]
+
         profile_context = {'profile_user': profile_user,
                    'profile_user_profile': profile_user_profile,
                    'follows_profiles': follows_profiles,
+                   'profile_user_followers': len(profile_user_followers) ,
+                    'profile_user_follows' : len(profile_user_follows)
                     }
     else:
         profile_context = {}
@@ -310,13 +343,13 @@ def get_user_profile_followers(request, user_id):
         profile_user_followers = [follow.follower_id for follow in Follow.objects.filter(followee_id=profile_user)]
         followers_profiles = Profile.objects.all().filter(user_id__in=profile_user_followers)
         profile_user_profile = Profile.objects.get(user_id=profile_user)
-
-        print("num followers", len(profile_user_followers))
-        print("num follower profiles", len(followers_profiles))
+        profile_user_follows = [follow.followee_id for follow in Follow.objects.filter(follower_id=profile_user)]
 
         profile_context = {'profile_user': profile_user,
                    'profile_user_profile': profile_user_profile,
                    'followers_profiles': followers_profiles,
+                   'profile_user_followers': len(profile_user_followers) , 
+                   'profile_user_follows' : len(profile_user_follows)
                     }
     else:
         profile_context = {}
@@ -369,11 +402,14 @@ def listing(request):
 @login_required
 def edit_post(request):
     post_id = request.POST.get('post_id')
-    if post_id is 0:  
+    
+    if post_id == 0:  
         context = { }
     else: 
-        context = {'post_id': post_id}
-    return render(request, "network/edit_post.html", context)
+        post = Post.objects.get(pk=post_id) 
+        context = { }
+        context['post_text'] = post.post_text
+    return HttpResponse(json.dumps(context), content_type="application/json", status=200)
 
 def get_post(request, post_id):
     try:
@@ -385,3 +421,22 @@ def get_post(request, post_id):
         post = None
         context = {}
     return HttpResponse(json.dumps(context), content_type="application/json")
+
+def update_post(post_id,contents):
+    date_time =timezone.now()
+    postobj = Post.objects.filter(id = post_id)
+    postobj.update(contents = contents, date_and_time =date_time)
+    
+    return postobj
+
+def save_post(request,post_id,content,user=""):
+    if request.user.is_authenticated:
+        update_pst = update_post(post_id,content)
+        postobj = update_pst.values()
+
+        result = {"result":list(postobj),"post_liked_ids" : 1 }
+        response = json.dumps(result,default=str)
+
+        return HttpResponse(response,content_type = "application/json")
+    else:
+        return HttpResponseRedirect(reverse("network:login"))

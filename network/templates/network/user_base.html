@@ -18,6 +18,17 @@
 
     <p>{{ profile_user_profile.full_name }} (@{{ profile_user.username}})</p>
     <p> {{ profile_user_profile.bio }}</p>
+    {% if profile_user in profile_user_followers_names %}
+    Followers: 
+    <p> {{ profile_user_followers }}</p>
+    Follows:
+    <p> {{ profile_user_follows }}</p>
+    {%else %}
+    <div class="follow">
+        <button class="followbutton">Follow</button>
+      </div>
+    
+    {% endif %}
 </div>
 
 <div id="userDetails" class="container">
